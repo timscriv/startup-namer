@@ -6,8 +6,33 @@ void main() => runApp(MyApp());
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final wordPair = WordPair.random();
-    return MaterialApp(title: 'Startup Name Generator', home: RandomWords());
+    return MaterialApp(
+        title: 'Startup Name Generator',
+        theme: ThemeData(
+          brightness: Brightness.dark,
+          canvasColor: Color(0xFF333664),
+          primaryColor: Colors.white,
+          appBarTheme: AppBarTheme(
+            color: Colors.white70,
+            textTheme: TextTheme(
+              title: TextStyle(
+                fontSize: 20.0,
+                color: Color(0xFF333664),
+              ),
+            ),
+            iconTheme: IconThemeData(
+              color: Color(0xFF333664),
+            ),
+          ),
+          textTheme: TextTheme(
+            title: TextStyle(
+                fontSize: 36.0,
+                fontStyle: FontStyle.italic,
+                color: Colors.white),
+            subhead: TextStyle(fontSize: 18.0, color: Colors.white70),
+          ),
+        ),
+        home: RandomWords());
   }
 }
 
@@ -18,14 +43,14 @@ class RandomWords extends StatefulWidget {
 
 class RandomWordsState extends State<RandomWords> {
   final List<WordPair> _suggestions = <WordPair>[];
-
+  final Set<WordPair> _saved = Set<WordPair>();
   Widget _buildSuggestions() {
     return ListView.builder(
         padding: const EdgeInsets.all(16),
         itemBuilder: (BuildContext _context, int i) {
           if (i.isOdd) {
             return Divider(
-              height: 24,
+              height: 16,
             );
           }
 
@@ -40,15 +65,58 @@ class RandomWordsState extends State<RandomWords> {
   }
 
   Widget _buildRow(WordPair wordPair) {
-    final TextStyle _biggerFont =
-        const TextStyle(fontSize: 24, color: Colors.white70);
+    final bool alreadySaved = _saved.contains(wordPair);
 
-    return ListTile(title: Text(wordPair.asPascalCase, style: _biggerFont));
+    return ListTile(
+      title: Text(wordPair.asPascalCase),
+      trailing: Icon(
+        alreadySaved ? Icons.favorite : Icons.favorite_border,
+        color: alreadySaved ? Colors.red : null,
+      ),
+      onTap: () {
+        setState(() {
+          alreadySaved ? _saved.remove(wordPair) : _saved.add(wordPair);
+        });
+      },
+    );
+  }
+
+  void _pushSaved() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        // Add 20 lines from here...
+        builder: (BuildContext context) {
+          final Iterable<ListTile> tiles = _saved.map(
+            (WordPair pair) {
+              return ListTile(
+                contentPadding: const EdgeInsets.all(16),
+                title: Text(
+                  pair.asPascalCase,
+                ),
+              );
+            },
+          );
+          final List<Widget> divided =
+              ListTile.divideTiles(context: context, tiles: tiles).toList();
+
+          return Scaffold(
+            appBar: AppBar(title: Text('Saved Suggestions')),
+            body: ListView(children: divided),
+          );
+        },
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: new Color(0xFF333664), body: _buildSuggestions());
+        appBar: AppBar(
+          title: Text('Startup name generator'),
+          actions: <Widget>[
+            IconButton(icon: Icon(Icons.list), onPressed: _pushSaved)
+          ],
+        ),
+        body: _buildSuggestions());
   }
 }
